@@ -81,7 +81,7 @@ def spectral_power_pipeline(
     return power
 
 
-def add_matsuno_curves(ax, which='symmetric', he_list=(15, 25, 50)):
+def add_matsuno_curves(ax, which='symmetric', he_list=(15, 25, 50), color='black', lw=1.5):
     _CURVES = {
             'symmetric': {
                 'Kelvin': lambda k, he: kelvin_frequency(k, he),
@@ -100,7 +100,7 @@ def add_matsuno_curves(ax, which='symmetric', he_list=(15, 25, 50)):
     k = k[k != 0]
     for frequency_of in _CURVES[which].values():
         for he in he_list:
-            ax.plot(k, frequency_of(k, he), color='black', lw=1.5, linestyle='dashed')
+            ax.plot(k, frequency_of(k, he), color=color, lw=lw, linestyle='dashed')
 
     ax.set_ylim(0.01, 0.5)
     ax.set_xlim(-15, 15)
