@@ -7,6 +7,7 @@ Run from the project root after installing the package with ``pip install -e .``
 
 Inputs: data/wave_filtered_fields/noaa_olr.<wave>.nc
 Outputs: data/wave_event_records/noaa_olr.<wave>.csv
+Events meet a 1.5-sigma OLR threshold and span at least one elapsed day.
 Existing CSVs are preserved unless --overwrite is supplied.
 """
 import argparse
@@ -23,10 +24,10 @@ from src.paths import DATA_DIR
 from src.wave_profiles import BOX_PROFILES as profiles
 
 THRESH_SIGMA = 1.5
-MIN_DURATION_DAYS = 3.0
+MIN_DURATION_DAYS = 1.0
 
 EVENT_COLUMNS = [
-    "wave", "start", "stop",
+    "wave", "start", "stop", "duration_days",
     "start_lon_min", "start_lon_max",
     "stop_lon_min", "stop_lon_max",
     "lat_min", "lat_max",
@@ -70,12 +71,12 @@ def record_and_save_wave_events(profile, overwrite=False):
             coords=event_hov.coords,
         )
 
-        # Check duration
+        # Use elapsed time: two consecutive daily timestamps span one day.
         duration_days = (
             (event_hov.time[-1] - event_hov.time[0]) / np.timedelta64(1, "D")
         ).item()
 
-        if duration_days <= MIN_DURATION_DAYS:
+        if duration_days < MIN_DURATION_DAYS:
             continue
         print(
             f"[{profile}] Processing candidate {event_id}/{n_candidates} "
@@ -235,6 +236,7 @@ def record_and_save_wave_events(profile, overwrite=False):
             "wave": profile,
             "start": event_hov.time.values[0],
             "stop": event_hov.time.values[-1],
+            "duration_days": duration_days,
             "start_lon_min": west_lons.isel(time=0).item(),
             "start_lon_max": east_lons.isel(time=0).item(),
             "stop_lon_min": west_lons.isel(time=-1).item(),

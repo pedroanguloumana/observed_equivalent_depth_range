@@ -43,17 +43,22 @@ The calculation uses the full input time range, a cosine-latitude-weighted mean
 over available latitudes at or north of the equator, and an OLR threshold of
 `-1.5` times the standard deviation across that profile's time–longitude field.
 Candidates use eight-neighbour connectivity and are retained when the elapsed
-time from first to last timestamp is **strictly greater than 3 days**. These
+time from first to last timestamp is **at least 1 day** (two consecutive daily
+timestamps). These
 choices are defined in the Python script. Widths use interpolated zero crossings;
 both speed estimates are positive eastward, with Radon speeds searched from
 `-50` to `50 m/s` in `0.5 m/s` increments.
 
-CSV columns are `wave`, `start`, `stop`, `max_olr_sigma`, `min_olr_sigma`,
-`mean_width_deg`, `max_width_deg`, `min_width_deg`, `radon_m_s`, and
-`extent_duration_m_s`. The OLR columns are signed values divided by the profile's
-standard deviation; widths are in longitude degrees and speeds in metres per
-second. Missing width estimates are saved as empty CSV fields. Read a file later
-with:
+CSV columns are `wave`, `start`, `stop`, `duration_days`, `start_lon_min`,
+`start_lon_max`, `stop_lon_min`, `stop_lon_max`, `lat_min`, `lat_max`,
+`max_olr_sigma`, `min_olr_sigma`, `mean_width_deg`, `max_width_deg`, `min_width_deg`,
+`radon_m_s`, and `extent_duration_m_s`. `duration_days` is the elapsed time between
+`start` and `stop`, allowing stricter duration filters when loading the catalogue.
+The OLR columns are signed values divided by the profile's standard deviation;
+widths are in longitude degrees and speeds in metres per second. Longitude bounds
+use interpolated zero crossings and follow the unwrapped event centre; latitude
+bounds describe the band averaged into the time–longitude field. Missing width
+estimates are saved as empty CSV fields. Read a file later with:
 
 ```python
 import pandas as pd
@@ -63,4 +68,7 @@ events = pd.read_csv(
     DATA_DIR / "wave_event_records" / "noaa_olr.Kelvin.csv",
     parse_dates=["start", "stop"],
 )
+
+# Apply a stricter minimum duration when analysing the catalogue.
+long_events = events.loc[events["duration_days"] >= 3]
 ```
